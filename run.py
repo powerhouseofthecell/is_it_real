@@ -3,6 +3,12 @@ import argparse
 
 ap = argparse.ArgumentParser()
 
+ap.add_argument(
+    'epochs'
+    type=int,
+    help='number of epochs to train the model on'
+)
+
 args = ap.parse_args()
 
 from keras.models import Sequential
@@ -66,18 +72,42 @@ def train_model(train_data, test_data):
     m.fit_generator(
         train_data,
         steps_per_epoch=20,
-        epochs=10,
+        epochs=args.epochs,
         validation_data=test_data,
         validation_steps=20,
         use_multiprocessing=False,
         workers=4
     )
 
+def predict(img_dir):
+    img_paths = [ os.path.join(img_dir, 'predict/', img_path) for img_path in os.listdir(os.path.join(img_dir, 'predict/')) ]
+
+    images = [ cv2.imread(img) for img in img_paths ]
+    images = [ cv2.resize(img, (im_height, im_width)) for img in images ]
+    images = [ np.reshape(img, [1, im_height, im_width, 3]) for img in images ]
+
+    return [ (m.predict_classes(img)[0][0], img_paths[i]) for i, img in enumerate(images) ]
+
+def invert_mapping(d):
+    inverted = dict()
+
+    for key, value in d.items():
+        inverted[value] = key
+    
+    return inverted
+
 try:
     if __name__ == '__main__':
         train_data, test_data = load_data('img')
         build_model()
         train_model(train_data, test_data)
+
+        predictions = predict('img')
+
+        mapping = invert_mapping(train_data.class_indices)
+
+        for val, im_name in predictions:
+            print(f'We think that {im_name} is {mapping[val]}')
 
 except KeyboardInterrupt:
     print('\nUser aborted!')
