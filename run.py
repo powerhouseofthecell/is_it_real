@@ -4,7 +4,7 @@ import argparse
 ap = argparse.ArgumentParser()
 
 ap.add_argument(
-    'epochs'
+    'epochs',
     type=int,
     help='number of epochs to train the model on'
 )
